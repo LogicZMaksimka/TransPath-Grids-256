@@ -1,4 +1,4 @@
-# Checkpoint 2 
+# TransPath on regular 256x256 8-connected grids
 
 ## Maps generation
 
