@@ -30,15 +30,15 @@ def adv_loss(criterion, na_outputs, va_outputs):
 
 class Autoencoder(pl.LightningModule):
     def __init__(self, 
-                in_channels=2, 
-                out_channels=1, 
-                hidden_channels=64,
+                in_channels=2,
+                out_channels=1,
+                hidden_channels=256,
                 attn_blocks=4,
                 attn_heads=4,
                 cnn_dropout=0.15,
                 attn_dropout=0.15,
-                downsample_steps=3, 
-                resolution=(64, 64),
+                downsample_steps=3,
+                resolution=(256, 256), 
                 mode='f',
                 *args,
                 **kwargs):
@@ -64,7 +64,7 @@ class Autoencoder(pl.LightningModule):
         
         self.recon_criterion = nn.L1Loss() if mode == 'h' else nn.MSELoss()
         self.mode = mode
-        self.k = 64*64 if mode == 'h' else 1
+        self.k = 256*256 if mode == 'h' else 1
         
         self.automatic_optimization = False
         self.save_hyperparameters()
@@ -96,7 +96,7 @@ class Autoencoder(pl.LightningModule):
         optimizer.step()
         sch.step()
         
-        self.log('train_loss', loss, on_step=False, on_epoch=True)
+        self.log('train_loss', loss, on_step=True, on_epoch=False)
         self.log('lr', sch.get_last_lr()[0], on_step=True, on_epoch=False)
         return loss
 
@@ -104,11 +104,11 @@ class Autoencoder(pl.LightningModule):
         loss = self.step(batch, batch_idx, 'val')
         self.log('val_loss', loss, on_step=False, on_epoch=True)
         return loss
-                 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=0.0004)
+        lr = 4e-5
+        optimizer = torch.optim.Adam(self.parameters(), lr=lr)
         scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            optimizer, max_lr=4e-4, total_steps=self.trainer.estimated_stepping_batches
+            optimizer, max_lr=lr, total_steps=self.trainer.estimated_stepping_batches
         )
         return [optimizer], [scheduler]
     
@@ -117,13 +117,13 @@ class DemAutoencoder(Autoencoder):
     def __init__(self, 
                 in_channels=5, 
                 out_channels=2, 
-                hidden_channels=64,
+                hidden_channels=256,
                 attn_blocks=6,
                 attn_heads=4,
                 cnn_dropout=0.15,
                 attn_dropout=0.15,
-                downsample_steps=3, 
-                resolution=(128, 128),
+                downsample_steps=2,
+                resolution=(256, 256),
                 *args,
                 **kwargs):
         super().__init__(in_channels, 
@@ -167,7 +167,7 @@ class PathLogger(pl.Callback):
         val_samples = self.val_samples.to(device=pl_module.device)
         prediction = (pl_module(val_samples) + 1) / 2
         if pl_module.mode == 'h':
-            prediction = prediction * 64 * 64
+            prediction = prediction * 256 * 256
 
         trainer.logger.experiment.log({
             'data': [wandb.Image(x) for x in torch.cat([self.val_samples, self.hm], dim=1)],
