@@ -1,23 +1,57 @@
-# TransPath: Learning Heuristics For Grid-Based Pathfinding via Transformers
-[This](https://github.com/AIRI-Institute/TransPath) is the code repository for the following paper accepted at AAAI 2023: 
+# Checkpoint 2 
 
-Daniil Kirilenko, Anton Andreychuk, Aleksandr Panov, Konstantin Yakovlev, "TransPath: Learning Heuristics For Grid-Based Pathfinding via Transformers", AAAI, 2023.
+## Maps generation
 
-![Visual abstract](images/visual_abstract.png)
+We adopted [TMP](https://arxiv.org/abs/2009.07476) (Tiled Motion Planning) dataset [generation script](https://github.com/omron-sinicx/planning-datasets/blob/icml2021/1_TiledMP.sh) add modified hyperparams as showed below:
 
-## Data
-### Grids
-Train, validation, and test maps with pre-computed values mentioned in our paper are available [here](https://disk.yandex.ru/d/xLeW_jrUpTVnCA). One can download and exctract it manually or just run `download.py`.
 
-### DEM
-DEM data with paired imagery used in our work are available [here](https://disk.yandex.ru/d/LIMbKd4AZPEUdA). Use `get_dem_focals.py` to generate gt-focal values. 
+```
+python generate_spp_instances.py 
+    --input-path "data/mpd/original/*" 
+    --output-path data/mpd/ 
+    --maze-size 128 
+    --mechanism moore 
+    --edge-ratio 0.25 
+    --tile-size=2 
+    --train-size 800 
+    --valid-size 100 
+    --test-size 100
+```
 
-## Pretrained models
-Directory `./weights` contains parameters for some of the pre-trained models from the paper.
+Examples:
+![Maps](https://github.com/LogicZMaksimka/TransPath-Project/blob/master/pictures/maps.png)
 
-Use `train.py` to train a model from scratch. Argument `--mode` defines the type of the model: `cf` and `f` are the models for grid-based pathfinding that predict correction factor and focal values respectively, `dem` is the model for DEM data.
 
-Use `eval.py` and `eval_dem.py` to evaluate a model on the test set.
+## Tasks generation
+For every map we generate 10 start/goal nodes with _hardness_ > 1.05
 
-## Examples
-Check `example.ipynb` for some examples of predictions and search results of our models. There are a few examples of train and out-of-distribution maps in the directory `./maps`.
+Task generation script
+```
+python task_generation.py --maps_path <path_to_maps>
+```
+
+## Model training
+
+### FS+PPM model
+
+Get focal values:
+
+```
+python get_focals.py
+    --filename ./data/1k_128x2_v2/
+```
+
+Training:
+```
+python lib.TransPath.train.py 
+    --mode f
+    --batch 16
+```
+
+View FS+PPM model **training report**:  
+https://api.wandb.ai/links/blain/4679lk9x  
+
+
+## Model evaluation
+Detailed evaluation of FS+PPM model:   
+https://github.com/LogicZMaksimka/TransPath-Project/blob/master/visualise_metrics.ipynb
