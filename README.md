@@ -54,4 +54,4 @@ https://api.wandb.ai/links/blain/4679lk9x
 
 ## Model evaluation
 Detailed evaluation of FS+PPM model:   
-https://github.com/LogicZMaksimka/TransPath-Project/blob/master/visualise_metrics.ipynb
+https://github.com/LogicZMaksimka/TransPath-Grids-256/blob/main/visualise_metrics.ipynb
